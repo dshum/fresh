@@ -1,0 +1,56 @@
+version: "2"
+
+services:
+  redis:
+    container_name: fresh_redis
+    image: redis:latest
+    ports:
+     - 63001:6379
+    tty: true
+  postgres:
+    container_name: fresh_postgres
+    image: postgres:latest
+    ports:
+      - 54001:5432
+    environment:
+      - POSTGRES_DB=fresh
+      - POSTGRES_USER=karl
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - ./storage/backups:/var/backups
+    tty: true
+  nginx:
+    container_name: fresh_nginx
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - 5001:80
+    volumes:
+      - ./:/var/www
+    links:
+      - php-fpm
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+  php-fpm:
+    container_name: fresh_php
+    build:
+      context: .
+      dockerfile: docker/php-fpm/Dockerfile
+    volumes:
+      - ./:/var/www
+    links:
+      - redis
+      - postgres
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+  code:
+    container_name: fresh_code
+    image: busybox
+    stdin_open: true
+    volumes:
+      - ./:/var/www
+    tty: true
+
